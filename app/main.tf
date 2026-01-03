@@ -1,5 +1,5 @@
 module "jenkins_keypair" {
-  source   = "./modules/keypair"
+  source   = "../modules/keypair"
   key_name = "my-ec2-key"
   tags = {
     Project     = "Mini-projet-commun"
