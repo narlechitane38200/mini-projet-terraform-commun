@@ -75,7 +75,7 @@ module "jenkins_ec2" {
   ec2_subnet_id = module.jenkins_subnet.subnet_id
   ec2_az            = var.app_az
   ec2_instance_type = "t3.micro"
-  ec2_key_name      = [module.jenkins_keypair.key_name]
+  ec2_key_name      = module.jenkins_keypair.key_name
   ec2_sg_ids        = [module.jenkins_sg.security_group_id]
   ec2_tags = {
     Name = "jenkins-ec2"
