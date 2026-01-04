@@ -147,7 +147,7 @@ resource "null_resource" "output_metadata" {
          "sudo chown ubuntu:ubuntu /opt/jenkins",
   
     #    "echo '4. Création du docker-compose.yml'",
-         "echo \"version: '3.8'\nservices:\n  jenkins:\n    image: jenkins/jenkins:lts\n    container_name: jenkins\n    restart: unless-stopped\n    ports:\n      - '8080:8080'\n      - '50000:50000'\n    volumes:\n      - jenkins_home:/var/jenkins_home\nvolumes:\n  jenkins_home:\" | sudo tee /opt/jenkins/docker-compose.yml",
+         "echo \"services:\n  jenkins:\n    image: jenkins/jenkins:lts\n    container_name: jenkins\n    restart: unless-stopped\n    ports:\n      - '8080:8080'\n      - '50000:50000'\n    volumes:\n      - jenkins_home:/var/jenkins_home\nvolumes:\n  jenkins_home:\" | sudo tee /opt/jenkins/docker-compose.yml",
   
     #    "echo '5. Lancement du service jenkins'",     
          "sudo docker compose -f /opt/jenkins/docker-compose.yml up -d"
