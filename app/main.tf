@@ -82,43 +82,6 @@ module "jenkins_ec2" {
     Name = "jenkins-ec2"
   }
   ec2_root_volume_size = 10
-  # ec2_user_data = <<-EOF
-  # #!/bin/bash
-  # set -e
-  # apt-get update -y
-  # apt-get upgrade -y
-  # apt-get install -y ca-certificates curl gnupg lsb-release
-  # curl -fsSL https://get.docker.com | sh
-  # systemctl start docker
-  # systemctl enable docker
-  # usermod -aG docker ubuntu
-  # 
-  # mkdir -p /usr/local/lib/docker/cli-plugins
-  # curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
-  #   -o /usr/local/lib/docker/cli-plugins/docker-compose
-  # chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
-  # 
-  # mkdir -p /opt/jenkins
-  # cd /opt/jenkins
-  # 
-  # cat <<EOT > docker-compose.yml
-  # version: "3.8"
-  # services:
-  #   jenkins:
-  #     image: jenkins/jenkins:lts
-  #     container_name: jenkins
-  #     restart: unless-stopped
-  #     ports:
-  #       - "8080:8080"
-  #       - "50000:50000"
-  #     volumes:
-  #       - jenkins_home:/var/jenkins_home
-  # volumes:
-  #   jenkins_home:
-  # EOT
-  # 
-  # docker compose up -d
-  # EOF
 }
 
 module "jenkins_ebs" {

@@ -6,14 +6,6 @@ terraform {
     }
   }
   required_version = "1.14.2"
-
-#  backend "s3" {
-#    bucket = "terraform-backend-radouane"
-#    key    = "demo_tfstate"
-#    region = "us-east-1"
-#    shared_credentials_files = [ "../.secrets/credentials" ]
-#    profile = "eazytraining-tp3"
-#  }
 }
 
 

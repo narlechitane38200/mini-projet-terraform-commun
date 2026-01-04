@@ -24,11 +24,10 @@ resource "aws_instance" "this" {
   key_name = var.ec2_key_name
   availability_zone = var.ec2_az
   tags = var.ec2_tags
-  user_data = var.ec2_user_data
 
   root_block_device {
     volume_type = "gp3"
-    volume_size = var.ec2_root_volume_size  # ← Modifié de 30 à 50 GB
+    volume_size = var.ec2_root_volume_size
     throughput  = 125
     iops        = 3000
     encrypted   = true

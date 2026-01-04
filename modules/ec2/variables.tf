@@ -39,9 +39,3 @@ variable "ec2_root_volume_size" {
   description = "size of the root block device"
   default = 30
 }
-
-variable "ec2_user_data" {
-  description = "Script user_data pour l'EC2 (cloud-init)"
-  type        = string
-  default     = ""
-}
