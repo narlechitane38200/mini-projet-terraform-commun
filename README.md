@@ -26,13 +26,13 @@ Une fois, l’installation terminée, j’ai importé, depuis mon repo github, l
 
 Voici les étapes :
 
-**ubuntu@ip-172-31-69-236:~$ git -v**
+**`ubuntu@ip-172-31-69-236:~$ git -v*`*
 
-**git version 2.43.0**
+**`git version 2.43.0`**
 
-**ubuntu@ip-172-31-69-236:~$ git init**
+**`ubuntu@ip-172-31-69-236:~$ git init`**
 
-**hint: Using 'master' as the name for the initial branch. This default branch name**
+**`hint: Using 'master' as the name for the initial branch. This default branch name`**
 
 **hint: is subject to change. To configure the initial branch name to use in all**
 
@@ -1676,5 +1676,6 @@ Nous voyons bien les règles de la SecurityGroup attaché à notre EC2 ainsi les
 Test fonctionnel de l’URL (ElasticIP sur le port d’écoute 8080) prouvant le bon déploiement du conteneur Jenkins :
 
 ![](Aspose.Words.3fa145c5-d83c-4906-be38-c7d3d022d667.004.jpeg)
+
 
 
