@@ -4,6 +4,7 @@ module "jenkins_keypair" {
   tags = {
     Project     = "Mini-projet-commun"
   }
+  private_key_path = var.private_key_path
 }
 
 module "jenkins_vpc" {
@@ -80,51 +81,51 @@ module "jenkins_ec2" {
   ec2_tags = {
     Name = "jenkins-ec2"
   }
-  ec2_root_volume_size = 50
-  ec2_user_data = <<-EOF
-  #!/bin/bash
-  set -e
-  apt-get update -y
-  apt-get upgrade -y
-  apt-get install -y ca-certificates curl gnupg lsb-release
-  curl -fsSL https://get.docker.com | sh
-  systemctl start docker
-  systemctl enable docker
-  usermod -aG docker ubuntu
-  
-  mkdir -p /usr/local/lib/docker/cli-plugins
-  curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
-    -o /usr/local/lib/docker/cli-plugins/docker-compose
-  chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
-  
-  mkdir -p /opt/jenkins
-  cd /opt/jenkins
-  
-  cat <<EOT > docker-compose.yml
-  version: "3.8"
-  services:
-    jenkins:
-      image: jenkins/jenkins:lts
-      container_name: jenkins
-      restart: unless-stopped
-      ports:
-        - "8080:8080"
-        - "50000:50000"
-      volumes:
-        - jenkins_home:/var/jenkins_home
-  volumes:
-    jenkins_home:
-  EOT
-  
-  docker compose up -d
-  EOF
+  ec2_root_volume_size = 10
+  # ec2_user_data = <<-EOF
+  # #!/bin/bash
+  # set -e
+  # apt-get update -y
+  # apt-get upgrade -y
+  # apt-get install -y ca-certificates curl gnupg lsb-release
+  # curl -fsSL https://get.docker.com | sh
+  # systemctl start docker
+  # systemctl enable docker
+  # usermod -aG docker ubuntu
+  # 
+  # mkdir -p /usr/local/lib/docker/cli-plugins
+  # curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
+  #   -o /usr/local/lib/docker/cli-plugins/docker-compose
+  # chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+  # 
+  # mkdir -p /opt/jenkins
+  # cd /opt/jenkins
+  # 
+  # cat <<EOT > docker-compose.yml
+  # version: "3.8"
+  # services:
+  #   jenkins:
+  #     image: jenkins/jenkins:lts
+  #     container_name: jenkins
+  #     restart: unless-stopped
+  #     ports:
+  #       - "8080:8080"
+  #       - "50000:50000"
+  #     volumes:
+  #       - jenkins_home:/var/jenkins_home
+  # volumes:
+  #   jenkins_home:
+  # EOT
+  # 
+  # docker compose up -d
+  # EOF
 }
 
 module "jenkins_ebs" {
   source = "../modules/ebs"
 
   ebs_az   = var.app_az
-  ebs_size = 30
+  ebs_size = 15
   ebs_tags = {
     Name = "jenkins-ebs"
   }
@@ -152,83 +153,58 @@ resource "aws_eip_association" "jenkins_eip_association" {
 resource "null_resource" "output_metadata" {
   depends_on = [module.jenkins_ec2, module.jenkins_eip,
                 module.jenkins_ebs, aws_volume_attachment.jenkins_ebs_attachment]
-  
-  #provisioner "remote-exec" {
-  #  connection {
-  #    type        = "ssh"
-  #    user        = "ubuntu"  # ou "ec2-user" selon ton AMI
-  #    private_key = file(var.private_key_path)
-  #    host        = module.jenkins_eip.eip_public_ip
-  #    timeout     = "10m"  # Timeout de 10 minutes
-  #  }
-#
-  #  inline = [
-  #    "echo '1. Mise à jour et installation des paquets'",
-  #    "sudo apt update -y",
-  #    "sudo apt install -y jenkins git",
-#
-  #    "echo '2. Préparation du volume EBS (/dev/xvdh)'",
-  #    # Attendre que le périphérique soit disponible
-  #    "while [ ! -b /dev/sdh ] && [ ! -b /dev/xvdh ]; do sleep 2; echo 'En attente du volume EBS...'; done",
-  #    # Identifier le bon nom de périphérique
-  #    "if [ -b /dev/sdh ]; then DEVICE='/dev/sdh'; elif [ -b /dev/xvdh ]; then DEVICE='/dev/xvdh'; else exit 1; fi",
-  #    "sudo blkid /dev/xvdh || sudo mkfs -t ext4 /dev/xvdh",    # Formater le disque tel n'est pas le cas
-  #    "sudo mkdir -p /mnt/ebs",                                 # Créer point de montage
-  #    "sudo mount /dev/xvdh /mnt/ebs",                          # Monter le disque
-  #    "grep -qs '/mnt/ebs' /etc/fstab || echo '/dev/xvdh /mnt/ebs ext4 defaults,nofail 0 2' | sudo tee -a /etc/fstab",  # Montage automatique
-#
-  #    "echo '3. Cloner le site dans le dossier temporaire'",
-  #    "rm -rf /tmp/site",
-  #    "git clone https://github.com/diranetafen/static-website-example.git /tmp/site",
-#
-  #    # 4. Copier les fichiers dans le volume EBS
-  #    "sudo cp -r /tmp/site/* /mnt/ebs/",
-#
-  #    # 5. Modifier le titre du site
-  #    "sudo sed -i 's|<h1>Dimension</h1>|<h1>Terraform Mini-Project</h1>|' /mnt/ebs/index.html",
-#
-  #    # 6. Donner les bons droits à jenkins
-  #    "sudo chown -R www-data:www-data /mnt/ebs",
-#
-  #    # 7. Rediriger /var/www/html vers /mnt/ebs
-  #    "sudo rm -rf /var/www/html",
-  #    "sudo ln -s /mnt/ebs /var/www/html",
-#
-  #    # 8. Redémarrer jenkins
-  #    "sudo systemctl restart jenkins"
-  #  ]
-  #}
+}
 
-  provisioner "local-exec" {
-    command = "echo jenkins EC2 PUBLIC_IP: ${module.jenkins_eip.eip_public_ip} - jenkins EC2 PUBLIC_DNS: ${module.jenkins_eip.eip_public_dns}  >> jenkins_ec2.txt"
+provisioner "remote-exec" {
+    connection {
+      type        = "ssh"
+      user        = "ubuntu" 
+      private_key = file(var.private_key_path)
+      host        = module.jenkins_eip.eip_public_ip
+      timeout     = "10m"  # Timeout de 10 minutes
+    }
+
+    inline = [
+  #    "echo '1. Mise à jour et installation des paquets Docker'",
+      "sudo apt update -y",
+       "sudo apt-get upgrade -y", 
+       "sudo apt-get install -y ca-certificates curl gnupg lsb-release",
+       "sudo curl -fsSL https://get.docker.com | sh",
+       "sudo systemctl enable docker",
+       "sudo systemctl restart docker",
+       "sudo usermod -aG docker ubuntu",
+
+  #    "echo '2. Préparation et installation du composant docker-compose'",
+       "sudo mkdir -p /usr/local/lib/docker/cli-plugins",
+       "sudo curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose",
+       "sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose",
+
+  #    "echo '3. Création du répertoire jenkins'",
+       "sudo mkdir -p /opt/jenkins",
+       "sudo chown ubuntu:ubuntu /opt/jenkins",
+
+  #    "echo '4. Création du docker-compose.yml'",
+       "sudo tee /opt/jenkins/docker-compose.yml > /dev/null <<'EOF'",
+       "version: \"3.8\"",
+       "services:",
+       "  jenkins:",
+       "    image: jenkins/jenkins:lts",
+       "    container_name: jenkins",
+       "    restart: unless-stopped",
+       "    ports:",
+       "      - \"8080:8080\"",
+       "      - \"50000:50000\"",
+       "    volumes:",
+       "      - jenkins_home:/var/jenkins_home",
+       "volumes:",
+       "  jenkins_home:",
+       "EOF",
+
+  #    "echo '5. Lancement du service jenkins'",     
+       "cd /opt/jenkins && sudo docker compose up -d",
+    ]
   }
 
-  # provisioner "remote-exec" {
-  #   connection {
-  #     type        = "ssh"
-  #     user        = "centos" # ou "ec2-user" selon ton AMI
-  #     private_key = file(var.private_key_path)
-  #     host        = module.jenkins_eip.eip_public_ip
-  #   }
-
-  #   inline = [
-  #     # Utiliser les archives vault
-  #     "sudo sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*",
-  #     "sudo sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*",
-
-  #     # Installer les prérequis
-  #     "sudo yum install -y yum-utils git",
-
-  #     # Ajouter le dépôt Docker
-  #     "sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo",
-
-  #     # Installer Docker
-  #     "sudo yum install -y docker-ce docker-ce-cli containerd.io",
-
-  #     # Démarrer Docker
-  #     "sudo systemctl start docker",
-  #     "sudo systemctl enable docker",
-  #     "sudo usermod -aG docker centos"
-  #   ]
-  # }
-}
+provisioner "local-exec" {
+    command = "echo jenkins EC2 PUBLIC_IP: ${module.jenkins_eip.eip_public_ip} - jenkins EC2 PUBLIC_DNS: ${module.jenkins_eip.eip_public_dns}  >> jenkins_ec2.txt"
+  }

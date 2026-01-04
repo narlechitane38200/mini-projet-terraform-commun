@@ -13,3 +13,7 @@ output "public_key" {
   description = "Clé publique SSH"
   value       = tls_private_key.this.public_key_openssh
 }
+
+output "private_key_path" {
+  value = var.private_key_path
+}
