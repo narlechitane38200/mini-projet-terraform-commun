@@ -153,58 +153,45 @@ resource "aws_eip_association" "jenkins_eip_association" {
 resource "null_resource" "output_metadata" {
   depends_on = [module.jenkins_ec2, module.jenkins_eip,
                 module.jenkins_ebs, aws_volume_attachment.jenkins_ebs_attachment]
-}
 
-provisioner "remote-exec" {
-    connection {
-      type        = "ssh"
-      user        = "ubuntu" 
-      private_key = file(var.private_key_path)
-      host        = module.jenkins_eip.eip_public_ip
-      timeout     = "10m"  # Timeout de 10 minutes
+
+  provisioner "remote-exec" {
+      connection {
+        type        = "ssh"
+        user        = "ubuntu" 
+        private_key = file(var.private_key_path)
+        host        = module.jenkins_eip.eip_public_ip
+        timeout     = "10m"  # Timeout de 10 minutes
+      }
+  
+      inline = [
+    #    "echo '1. Mise à jour et installation des paquets Docker'",
+         "sudo apt update -y",
+         "sudo apt-get upgrade -y", 
+         "sudo apt-get install -y ca-certificates curl gnupg lsb-release",
+         "sudo curl -fsSL https://get.docker.com | sh",
+         "sudo systemctl enable docker",
+         "sudo systemctl restart docker",
+         "sudo usermod -aG docker ubuntu",
+  
+    #    "echo '2. Préparation et installation du composant docker-compose'",
+         "sudo mkdir -p /usr/local/lib/docker/cli-plugins",
+         "sudo curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose",
+         "sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose",
+  
+    #    "echo '3. Création du répertoire jenkins'",
+         "sudo mkdir -p /opt/jenkins",
+         "sudo chown ubuntu:ubuntu /opt/jenkins",
+  
+    #    "echo '4. Création du docker-compose.yml'",
+         "echo \"version: '3.8'\nservices:\n  jenkins:\n    image: jenkins/jenkins:lts\n    container_name: jenkins\n    restart: unless-stopped\n    ports:\n      - '8080:8080'\n      - '50000:50000'\n    volumes:\n      - jenkins_home:/var/jenkins_home\nvolumes:\n  jenkins_home:\" | sudo tee /opt/jenkins/docker-compose.yml",
+  
+    #    "echo '5. Lancement du service jenkins'",     
+         "sudo docker compose -f /opt/jenkins/docker-compose.yml up -d"
+      ]
     }
-
-    inline = [
-  #    "echo '1. Mise à jour et installation des paquets Docker'",
-      "sudo apt update -y",
-       "sudo apt-get upgrade -y", 
-       "sudo apt-get install -y ca-certificates curl gnupg lsb-release",
-       "sudo curl -fsSL https://get.docker.com | sh",
-       "sudo systemctl enable docker",
-       "sudo systemctl restart docker",
-       "sudo usermod -aG docker ubuntu",
-
-  #    "echo '2. Préparation et installation du composant docker-compose'",
-       "sudo mkdir -p /usr/local/lib/docker/cli-plugins",
-       "sudo curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose",
-       "sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose",
-
-  #    "echo '3. Création du répertoire jenkins'",
-       "sudo mkdir -p /opt/jenkins",
-       "sudo chown ubuntu:ubuntu /opt/jenkins",
-
-  #    "echo '4. Création du docker-compose.yml'",
-       "sudo tee /opt/jenkins/docker-compose.yml > /dev/null <<'EOF'",
-       "version: \"3.8\"",
-       "services:",
-       "  jenkins:",
-       "    image: jenkins/jenkins:lts",
-       "    container_name: jenkins",
-       "    restart: unless-stopped",
-       "    ports:",
-       "      - \"8080:8080\"",
-       "      - \"50000:50000\"",
-       "    volumes:",
-       "      - jenkins_home:/var/jenkins_home",
-       "volumes:",
-       "  jenkins_home:",
-       "EOF",
-
-  #    "echo '5. Lancement du service jenkins'",     
-       "cd /opt/jenkins && sudo docker compose up -d",
-    ]
-  }
-
-provisioner "local-exec" {
-    command = "echo jenkins EC2 PUBLIC_IP: ${module.jenkins_eip.eip_public_ip} - jenkins EC2 PUBLIC_DNS: ${module.jenkins_eip.eip_public_dns}  >> jenkins_ec2.txt"
-  }
+  
+  provisioner "local-exec" {
+      command = "echo jenkins EC2 PUBLIC_IP: ${module.jenkins_eip.eip_public_ip} - jenkins EC2 PUBLIC_DNS: ${module.jenkins_eip.eip_public_dns}  >> jenkins_ec2.txt"
+    }
+} 
