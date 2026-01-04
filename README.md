@@ -1,10 +1,18 @@
 ﻿**Mini-projet-terraform-commun**
 
+
+
 Le but de ce mini projet commun est de déployer via l’outil d’IaC Terraform, un serveur Jenkins sur un environnement AWS. Pour ce faire, j'ai utilisé différents modules afin de répondre aux exigences demandées.
+
+
 
 Aussi j’ai utilisé comme serveur de déploiement Terraform, une machine EC2 Ubuntu.
 
+
+
 Voici les étapes d’installation de l’outil sur ma machine :
+
+
 
 `    `**1. wget https://releases.hashicorp.com/terraform/1.14.2/terraform\_1.14.2\_linux\_amd64.zip**
 
@@ -22,15 +30,20 @@ Voici les étapes d’installation de l’outil sur ma machine :
 
 `    `**8. terraform -version**
 
+
+
+
 Une fois, l’installation terminée, j’ai importé, depuis mon repo github, l’ensemble de mon code.
+
+
 
 Voici les étapes :
 
-**`ubuntu@ip-172-31-69-236:~$ git -v*`*
+**ubuntu@ip-172-31-69-236:~$ git -v**
 
-**`git version 2.43.0`**
+**git version 2.43.0**
 
-**`ubuntu@ip-172-31-69-236:~$ git init`**
+**ubuntu@ip-172-31-69-236:~$ git init**
 
 **`hint: Using 'master' as the name for the initial branch. This default branch name`**
 
@@ -92,9 +105,15 @@ Voici les étapes :
 
 **drwxrwxr-x 5 ubuntu ubuntu 4.0K Jan  4 10:59 mini-projet-terraform-commun**
 
+
+
 Création d’un répertoire « .secrets » dans le projet « mini-projet-terraform-commun ». Celui contiendra le fichier « credentials » contenant les informations de connexion au compte AWS ainsi la future paire de clé générée lors du prochain déploiement.
 
+
+
 Ensuite, on se place au niveau du répertoire « mini-projet-terraform-commun/app » contenant le root main.tf afin d’initialiser le répertoire terraform. Une fois, l’initialisation effectuée avec succès, nous lançons la commande « terraform apply » afin de déploiement l’infrastructure souhaitée dans le code :
+
+
 
 **Enter a value: yes**
 
@@ -1645,7 +1664,13 @@ Ensuite, on se place au niveau du répertoire « mini-projet-terraform-commun/a
 
 **Apply complete! Resources: 16 added, 0 changed, 0 destroyed.**
 
+
+
+
 Vue sur la console AWS de l’infrastructure générée via Terraform :
+
+
+
 
 ![](Aspose.Words.3fa145c5-d83c-4906-be38-c7d3d022d667.001.jpeg)
 
@@ -1662,9 +1687,12 @@ Vue sur la console AWS de l’infrastructure générée via Terraform :
 
 
 
-Nous voyons bien les règles de la SecurityGroup attaché à notre EC2 ainsi les EBS :![](Aspose.Words.3fa145c5-d83c-4906-be38-c7d3d022d667.002.jpeg)![](Aspose.Words.3fa145c5-d83c-4906-be38-c7d3d022d667.003.jpeg)
+Nous voyons bien les règles de la SecurityGroup attaché à notre EC2 ainsi les EBS :
+
+![](Aspose.Words.3fa145c5-d83c-4906-be38-c7d3d022d667.002.jpeg)
 
 
+![](Aspose.Words.3fa145c5-d83c-4906-be38-c7d3d022d667.003.jpeg)
 
 
 
@@ -1675,7 +1703,10 @@ Nous voyons bien les règles de la SecurityGroup attaché à notre EC2 ainsi les
 
 Test fonctionnel de l’URL (ElasticIP sur le port d’écoute 8080) prouvant le bon déploiement du conteneur Jenkins :
 
+
+
 ![](Aspose.Words.3fa145c5-d83c-4906-be38-c7d3d022d667.004.jpeg)
+
 
 
 
