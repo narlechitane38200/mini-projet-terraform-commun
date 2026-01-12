@@ -131,50 +131,56 @@ resource "null_resource" "output_metadata" {
     }
 
     inline = [
-      # 1. Mise à jour et installation des paquets nécessaires
+      # 1️⃣ Mise à jour et installation des paquets nécessaires
       "sudo apt update -y",
-      "sudo apt-get install -y ca-certificates curl gnupg lsb-release",
+      "sudo apt install -y ca-certificates curl gnupg lsb-release",
 
-      # 2. Installation de Docker
+      # 2️⃣ Installation de Docker
       "sudo curl -fsSL https://get.docker.com | sh",
       "sudo systemctl enable docker",
+      "sudo systemctl start docker",
 
-      # 3. Installation de docker-compose
+      # 3️⃣ Installation de Docker Compose v2
       "sudo mkdir -p /usr/local/lib/docker/cli-plugins",
       "sudo curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose",
       "sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose",
 
-      # 4. Attente et détection du disque NVMe EBS attaché
+      # 4️⃣ Détection du disque NVMe attaché
       "DEVICE=$(ls /dev/nvme*n1 | grep -v nvme0n1)",
-      "echo \"Device detected: $DEVICE\"",
+      "echo \"Disque détecté : $DEVICE\"",
 
-      # 5. Formattage si nécessaire
+      # 5️⃣ Attente que le disque soit prêt
+      "while [ ! -b $DEVICE ]; do sleep 2; done",
+
+      # 6️⃣ Formattage si nécessaire
       "sudo file -s $DEVICE | grep -q filesystem || sudo mkfs.ext4 $DEVICE",
 
-      # 6. Montage du disque
+      # 7️⃣ Montage du disque
       "sudo mkdir -p /var/lib/docker",
-      "sudo mount $DEVICE /var/lib/docker",
+      "sudo mount -o defaults,nofail $DEVICE /var/lib/docker",
 
-      # 7. Ajout dans /etc/fstab pour montage automatique
+      # 8️⃣ Ajout dans /etc/fstab pour montage automatique
       "UUID=$(sudo blkid -s UUID -o value $DEVICE)",
       "grep -q $UUID /etc/fstab || echo \"UUID=$UUID /var/lib/docker ext4 defaults,nofail 0 2\" | sudo tee -a /etc/fstab",
 
-      # 8. Redémarrage de Docker
-      "sudo systemctl restart docker",
+      # 9️⃣ Permissions Docker
+      "sudo chown -R ubuntu:ubuntu /var/lib/docker",
       "sudo usermod -aG docker ubuntu",
+      "sudo systemctl restart docker",
 
-      # 9. Préparation du répertoire Jenkins
+      # 🔟 Préparation du répertoire Jenkins
       "sudo mkdir -p /opt/jenkins",
-      "sudo chown ubuntu:ubuntu /opt/jenkins",
+      "sudo chown -R ubuntu:ubuntu /opt/jenkins",
 
-      # 10. Création du docker-compose.yml pour Jenkins
-      "echo \"services:\\n  jenkins:\\n    image: jenkins/jenkins:lts\\n    container_name: jenkins\\n    restart: unless-stopped\\n    ports:\\n      - '8080:8080'\\n      - '50000:50000'\\n    volumes:\\n      - jenkins_home:/var/jenkins_home\\nvolumes:\\n  jenkins_home:\" | sudo tee /opt/jenkins/docker-compose.yml",
+      # 1️⃣1️⃣ Création du docker-compose.yml pour Jenkins
+      "echo 'services:\n  jenkins:\n    image: jenkins/jenkins:lts\n    container_name: jenkins\n    restart: unless-stopped\n    ports:\n      - \"8080:8080\"\n      - \"50000:50000\"\n    volumes:\n      - jenkins_home:/var/jenkins_home\nvolumes:\n  jenkins_home:' | sudo tee /opt/jenkins/docker-compose.yml",
 
-      # 11. Lancement de Jenkins
-      "sudo docker compose -f /opt/jenkins/docker-compose.yml up -d"
+      # 1️⃣2️⃣ Lancement de Jenkins
+      "cd /opt/jenkins && sudo docker compose up -d"
     ]
+  }
 
   provisioner "local-exec" {
-      command = "echo jenkins EC2 PUBLIC_IP: ${module.jenkins_eip.eip_public_ip} - jenkins EC2 PUBLIC_DNS: ${module.jenkins_eip.eip_public_dns}  >> jenkins_ec2.txt"
-    }
+    command = "echo jenkins EC2 PUBLIC_IP: ${module.jenkins_eip.eip_public_ip} - jenkins EC2 PUBLIC_DNS: ${module.jenkins_eip.eip_public_dns} >> jenkins_ec2.txt"
+  }
 }
