@@ -81,14 +81,14 @@ module "jenkins_ec2" {
   ec2_tags = {
     Name = "jenkins-ec2"
   }
-  ec2_root_volume_size = 10
+  ec2_root_volume_size = 50
 }
 
 module "jenkins_ebs" {
   source = "../modules/ebs"
 
   ebs_az   = var.app_az
-  ebs_size = 15
+  ebs_size = 30
   ebs_tags = {
     Name = "jenkins-ebs"
   }
