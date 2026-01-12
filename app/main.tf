@@ -126,6 +126,7 @@ resource "null_resource" "output_metadata" {
         host        = module.jenkins_eip.eip_public_ip
         timeout     = "10m"  # Timeout de 10 minutes
       }
+      
   
       inline = [
     #    "echo '1. Mise à jour et installation des paquets Docker'",
@@ -150,6 +151,24 @@ resource "null_resource" "output_metadata" {
   
     #    "echo '5. Lancement du service jenkins'",     
          "sudo docker compose -f /opt/jenkins/docker-compose.yml up -d"
+
+    #    "echo '1. Attente de la visibilité du disque EBS'",
+         "while [ ! -e /dev/xvdh ]; do sleep 2; done",
+
+    #    "echo '2. Vérification du bon du disque EBS'",
+         "sudo file -s /dev/xvdh | grep -q filesystem || sudo mkfs.ext4 /dev/xvdh",
+
+    #    "echo '3. Création du point de montage'",
+         "sudo mkdir -p /data",
+
+    #    "echo '4. Montage du volume'",
+         "sudo mount /dev/xvdh /data",
+
+    #   "echo '5. Récupération de l'UUID du volume'",
+        "UUID=$(sudo blkid -s UUID -o value /dev/xvdh)",
+
+    #   "echo '6. Ajout dans /etc/fstab (si absent)'",
+       "grep -q \"$UUID\" /etc/fstab || echo \"UUID=$UUID /data ext4 defaults,nofail 0 2\" | sudo tee -a /etc/fstab"
       ]
     }
   
