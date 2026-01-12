@@ -134,41 +134,42 @@ resource "null_resource" "output_metadata" {
          "sudo apt-get install -y ca-certificates curl gnupg lsb-release",
          "sudo curl -fsSL https://get.docker.com | sh",
          "sudo systemctl enable docker",
-         "sudo systemctl restart docker",
-         "sudo usermod -aG docker ubuntu",
   
     #    "echo '2. Préparation et installation du composant docker-compose'",
          "sudo mkdir -p /usr/local/lib/docker/cli-plugins",
          "sudo curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose",
          "sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose",
-  
-    #    "echo '3. Création du répertoire jenkins'",
-         "sudo mkdir -p /opt/jenkins",
-         "sudo chown ubuntu:ubuntu /opt/jenkins",
-  
-    #    "echo '4. Création du docker-compose.yml'",
-         "echo \"services:\n  jenkins:\n    image: jenkins/jenkins:lts\n    container_name: jenkins\n    restart: unless-stopped\n    ports:\n      - '8080:8080'\n      - '50000:50000'\n    volumes:\n      - jenkins_home:/var/jenkins_home\nvolumes:\n  jenkins_home:\" | sudo tee /opt/jenkins/docker-compose.yml",
-  
-    #    "echo '5. Lancement du service jenkins'",     
-         "sudo docker compose -f /opt/jenkins/docker-compose.yml up -d"
 
-    #    "echo '1. Attente de la visibilité du disque EBS'",
+    #    "echo '3. Attente de la visibilité du disque EBS'",
          "while [ ! -e /dev/xvdh ]; do sleep 2; done",
+  
+    #    "echo '4. Arrêt du composant Docker'",
+         "sudo systemctl stop docker",
 
-    #    "echo '2. Vérification du bon du disque EBS'",
+    #    "echo '5. Vérification du bon formattage du disque EBS si nécessaire'",
          "sudo file -s /dev/xvdh | grep -q filesystem || sudo mkfs.ext4 /dev/xvdh",
 
-    #    "echo '3. Création du point de montage'",
-         "sudo mkdir -p /data",
+    #    "echo '6. Création du point de montage'",
+         "sudo mkdir -p /var/lib/docker",
+         "sudo mount /dev/xvdh /var/lib/docker",
 
-    #    "echo '4. Montage du volume'",
-         "sudo mount /dev/xvdh /data",
+    #    "echo '7. Récupération de l'UUID du volume et ajout dans /etc/fstab (si absent)'",
+         "sudo blkid -s UUID -o value /dev/xvdh | xargs -I {} sh -c 'grep -q {} /etc/fstab || echo \"UUID={} /var/lib/docker ext4 defaults,nofail 0 2\" >> /etc/fstab'",
 
-    #   "echo '5. Récupération de l'UUID du volume'",
-        "UUID=$(sudo blkid -s UUID -o value /dev/xvdh)",
+    #    "echo '8. Redémarrage du composant Docker'",
+         "sudo systemctl start docker",
+         "sudo usermod -aG docker ubuntu",
 
-    #   "echo '6. Ajout dans /etc/fstab (si absent)'",
-       "grep -q \"$UUID\" /etc/fstab || echo \"UUID=$UUID /data ext4 defaults,nofail 0 2\" | sudo tee -a /etc/fstab"
+    #    "echo '9. Création du répertoire jenkins'",
+         "sudo mkdir -p /opt/jenkins",
+         "sudo chown ubuntu:ubuntu /opt/jenkins",
+
+    #    "echo '10. Création du docker-compose.yml'",
+         "echo \"services:\n  jenkins:\n    image: jenkins/jenkins:lts\n    container_name: jenkins\n    restart: unless-stopped\n    ports:\n      - '8080:8080'\n      - '50000:50000'\n    volumes:\n      - jenkins_home:/var/jenkins_home\nvolumes:\n  jenkins_home:\" | sudo tee /opt/jenkins/docker-compose.yml",
+  
+    #    "echo '11. Lancement du service jenkins'",     
+         "sudo docker compose -f /opt/jenkins/docker-compose.yml up -d",
+
       ]
     }
   
