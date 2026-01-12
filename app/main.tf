@@ -173,13 +173,7 @@ resource "null_resource" "output_metadata" {
       # 11. Lancement de Jenkins
       "sudo docker compose -f /opt/jenkins/docker-compose.yml up -d"
     ]
-  }
 
-  provisioner "local-exec" {
-    command = "echo jenkins EC2 PUBLIC_IP: ${module.jenkins_eip.eip_public_ip} - jenkins EC2 PUBLIC_DNS: ${module.jenkins_eip.eip_public_dns}  >> jenkins_ec2.txt"
-  }
-
-  
   provisioner "local-exec" {
       command = "echo jenkins EC2 PUBLIC_IP: ${module.jenkins_eip.eip_public_ip} - jenkins EC2 PUBLIC_DNS: ${module.jenkins_eip.eip_public_dns}  >> jenkins_ec2.txt"
     }
