@@ -130,7 +130,6 @@ resource "null_resource" "output_metadata" {
       inline = [
     #    "echo '1. Mise à jour et installation des paquets Docker'",
          "sudo apt update -y",
-         "sudo apt-get upgrade -y", 
          "sudo apt-get install -y ca-certificates curl gnupg lsb-release",
          "sudo curl -fsSL https://get.docker.com | sh",
          "sudo systemctl enable docker",
