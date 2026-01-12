@@ -114,64 +114,71 @@ resource "aws_eip_association" "jenkins_eip_association" {
 }
 
 resource "null_resource" "output_metadata" {
-  depends_on = [module.jenkins_ec2, module.jenkins_eip,
-                module.jenkins_ebs, aws_volume_attachment.jenkins_ebs_attachment]
-
+  depends_on = [
+    module.jenkins_ec2,
+    module.jenkins_eip,
+    module.jenkins_ebs,
+    aws_volume_attachment.jenkins_ebs_attachment
+  ]
 
   provisioner "remote-exec" {
-      connection {
-        type        = "ssh"
-        user        = "ubuntu" 
-        private_key = file(var.private_key_path)
-        host        = module.jenkins_eip.eip_public_ip
-        timeout     = "10m"  # Timeout de 10 minutes
-      }
-      
-  
-      inline = [
-    #    "echo '1. Mise à jour et installation des paquets Docker'",
-         "sudo apt update -y",
-         "sudo apt-get install -y ca-certificates curl gnupg lsb-release",
-         "sudo curl -fsSL https://get.docker.com | sh",
-         "sudo systemctl enable docker",
-  
-    #    "echo '2. Préparation et installation du composant docker-compose'",
-         "sudo mkdir -p /usr/local/lib/docker/cli-plugins",
-         "sudo curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose",
-         "sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose",
-
-    #    "echo '3. Attente de la visibilité du disque EBS'",
-         "while [ ! -e /dev/xvdh ]; do sleep 2; done",
-  
-    #    "echo '4. Arrêt du composant Docker'",
-         "sudo systemctl stop docker",
-
-    #    "echo '5. Vérification du bon formattage du disque EBS si nécessaire'",
-         "sudo file -s /dev/xvdh | grep -q filesystem || sudo mkfs.ext4 /dev/xvdh",
-
-    #    "echo '6. Création du point de montage'",
-         "sudo mkdir -p /var/lib/docker",
-         "sudo mount /dev/xvdh /var/lib/docker",
-
-    #    "echo '7. Récupération de l'UUID du volume et ajout dans /etc/fstab (si absent)'",
-         "sudo blkid -s UUID -o value /dev/xvdh | xargs -I {} sh -c 'grep -q {} /etc/fstab || echo \"UUID={} /var/lib/docker ext4 defaults,nofail 0 2\" >> /etc/fstab'",
-
-    #    "echo '8. Redémarrage du composant Docker'",
-         "sudo systemctl start docker",
-         "sudo usermod -aG docker ubuntu",
-
-    #    "echo '9. Création du répertoire jenkins'",
-         "sudo mkdir -p /opt/jenkins",
-         "sudo chown ubuntu:ubuntu /opt/jenkins",
-
-    #    "echo '10. Création du docker-compose.yml'",
-         "echo \"services:\n  jenkins:\n    image: jenkins/jenkins:lts\n    container_name: jenkins\n    restart: unless-stopped\n    ports:\n      - '8080:8080'\n      - '50000:50000'\n    volumes:\n      - jenkins_home:/var/jenkins_home\nvolumes:\n  jenkins_home:\" | sudo tee /opt/jenkins/docker-compose.yml",
-  
-    #    "echo '11. Lancement du service jenkins'",     
-         "sudo docker compose -f /opt/jenkins/docker-compose.yml up -d",
-
-      ]
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = file(var.private_key_path)
+      host        = module.jenkins_eip.eip_public_ip
+      timeout     = "10m"
     }
+
+    inline = [
+      # 1. Mise à jour et installation des paquets nécessaires
+      "sudo apt update -y",
+      "sudo apt-get install -y ca-certificates curl gnupg lsb-release",
+
+      # 2. Installation de Docker
+      "sudo curl -fsSL https://get.docker.com | sh",
+      "sudo systemctl enable docker",
+
+      # 3. Installation de docker-compose
+      "sudo mkdir -p /usr/local/lib/docker/cli-plugins",
+      "sudo curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/local/lib/docker/cli-plugins/docker-compose",
+      "sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose",
+
+      # 4. Attente et détection du disque NVMe EBS attaché
+      "DEVICE=$(ls /dev/nvme*n1 | grep -v nvme0n1)",
+      "echo \"Device detected: $DEVICE\"",
+
+      # 5. Formattage si nécessaire
+      "sudo file -s $DEVICE | grep -q filesystem || sudo mkfs.ext4 $DEVICE",
+
+      # 6. Montage du disque
+      "sudo mkdir -p /var/lib/docker",
+      "sudo mount $DEVICE /var/lib/docker",
+
+      # 7. Ajout dans /etc/fstab pour montage automatique
+      "UUID=$(sudo blkid -s UUID -o value $DEVICE)",
+      "grep -q $UUID /etc/fstab || echo \"UUID=$UUID /var/lib/docker ext4 defaults,nofail 0 2\" | sudo tee -a /etc/fstab",
+
+      # 8. Redémarrage de Docker
+      "sudo systemctl restart docker",
+      "sudo usermod -aG docker ubuntu",
+
+      # 9. Préparation du répertoire Jenkins
+      "sudo mkdir -p /opt/jenkins",
+      "sudo chown ubuntu:ubuntu /opt/jenkins",
+
+      # 10. Création du docker-compose.yml pour Jenkins
+      "echo \"services:\\n  jenkins:\\n    image: jenkins/jenkins:lts\\n    container_name: jenkins\\n    restart: unless-stopped\\n    ports:\\n      - '8080:8080'\\n      - '50000:50000'\\n    volumes:\\n      - jenkins_home:/var/jenkins_home\\nvolumes:\\n  jenkins_home:\" | sudo tee /opt/jenkins/docker-compose.yml",
+
+      # 11. Lancement de Jenkins
+      "sudo docker compose -f /opt/jenkins/docker-compose.yml up -d"
+    ]
+  }
+
+  provisioner "local-exec" {
+    command = "echo jenkins EC2 PUBLIC_IP: ${module.jenkins_eip.eip_public_ip} - jenkins EC2 PUBLIC_DNS: ${module.jenkins_eip.eip_public_dns}  >> jenkins_ec2.txt"
+  }
+}
   
   provisioner "local-exec" {
       command = "echo jenkins EC2 PUBLIC_IP: ${module.jenkins_eip.eip_public_ip} - jenkins EC2 PUBLIC_DNS: ${module.jenkins_eip.eip_public_dns}  >> jenkins_ec2.txt"
